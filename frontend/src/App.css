@@ -1,0 +1,170 @@
+:root { 
+    --bg: #0d1117; 
+    --side: #161b22; 
+    --accent: #58a6ff; 
+    --border: #30363d; 
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; height: 100vh; overflow: hidden; }
+
+.container { display: flex; height: 100vh; }
+
+/* 📁 Sidebar Styling */
+.sidebar { 
+    width: 280px; 
+    background: var(--side); 
+    border-right: 1px solid var(--border); 
+    padding: 20px; 
+    display: flex;
+    flex-direction: column;
+}
+.logo { font-size: 22px; font-weight: bold; color: var(--accent); margin-bottom: 30px; text-align: center; }
+.section { margin-bottom: 25px; }
+label { display: block; font-size: 11px; color: #8b949e; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; }
+
+select { 
+    width: 100%; padding: 10px; background: #0d1117; border: 1px solid var(--border); 
+    color: white; border-radius: 6px; outline: none; cursor: pointer;
+}
+
+.upload-btn { 
+    display: block; text-align: center; padding: 12px; border: 1px dashed var(--accent); 
+    border-radius: 8px; cursor: pointer; color: var(--accent); transition: 0.3s;
+}
+.upload-btn:hover { background: rgba(88, 166, 255, 0.05); }
+
+.file-list { margin-top: 10px; font-size: 12px; color: #8b949e; max-height: 100px; overflow-y: auto; }
+
+.primary-btn { 
+    width: 100%; padding: 10px; background: var(--accent); border: none; 
+    color: white; border-radius: 6px; cursor: pointer; font-weight: bold; 
+}
+
+#clearBtn {
+    margin-top: auto; padding: 12px; background: #3d2222; color: #ff7b72;
+    border: none; border-radius: 8px; cursor: pointer; font-weight: bold;
+}
+
+/* 💬 Main Content & Tabs */
+.main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.tabs { display: flex; background: var(--side); border-bottom: 1px solid var(--border); }
+
+.tab-btn { 
+    padding: 15px 30px; border: none; background: none; color: #8b949e; 
+    cursor: pointer; font-weight: 600; border-bottom: 2px solid transparent;
+}
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.tab-content { flex: 1; display: flex; flex-direction: column; padding: 20px; overflow: hidden; }
+
+/* Scrollable Windows */
+.scroll { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; padding-right: 10px; }
+.scroll::-webkit-scrollbar { width: 6px; }
+.scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+/* 🗨️ Chat Bubbles */
+.msg { padding: 12px 18px; border-radius: 14px; max-width: 80%; line-height: 1.6; font-size: 15px; }
+.ai { background: #21262d; align-self: flex-start; border: 1px solid var(--border); }
+.user { background: #1f6feb; align-self: flex-end; color: white; border-bottom-right-radius: 2px; }
+
+.empty-msg { text-align: center; margin-top: 100px; color: #8b949e; font-size: 18px; }
+
+/* ⌨️ Input Area */
+.input-box { display: flex; gap: 10px; padding: 15px 0; border-top: 1px solid var(--border); }
+textarea { 
+    flex: 1; background: #161b22; border: 1px solid var(--border); color: white; 
+    padding: 14px; border-radius: 10px; resize: none; height: 55px; outline: none; font-size: 15px;
+}
+#sendBtn { 
+    background: var(--accent); border: none; width: 55px; height: 55px; 
+    border-radius: 10px; color: white; cursor: pointer; font-size: 20px; transition: 0.2s;
+}
+#sendBtn:hover { transform: scale(1.05); }
+
+/* Markdown Code Blocks */
+pre { background: #000 !important; padding: 14px; border-radius: 8px; margin: 10px 0; overflow-x: auto; }
+code { font-family: 'Consolas', monospace; font-size: 14px; }
+
+/* --- Naya code yahan se start hota hai --- */
+
+/* Sidebar mein jo 'Run & Auto-Fix' button hai uske liye */
+.run-btn {
+    width: 100%;
+    padding: 10px;
+    background: #238636 !important; /* GitHub jaisa green color */
+    border: none;
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    margin-top: 10px;
+    transition: 0.3s;
+}
+
+.run-btn:hover {
+    background: #2ea043 !important;
+}
+
+/* Analysis tab ko terminal jaisa dikhane ke liye */
+.analysis-window {
+    background: #000;
+    color: #39ff14; /* Hacker green text */
+    padding: 20px;
+    border-radius: 8px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    line-height: 1.6;
+    border: 1px solid var(--border);
+    height: 100%;
+}
+
+/* Jab Auto-fix ho toh heading alag dikhe */
+.analysis-window h2 {
+    color: var(--accent);
+    font-size: 1.2rem;
+    margin-top: 15px;
+    border-bottom: 1px solid var(--border);
+}
+
+/* 🔥 Loading Animation */
+.loading {
+  text-align: center;
+  padding: 10px;
+  color: #58a6ff;
+  font-weight: bold;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0% { opacity: 0.3; }
+  50% { opacity: 1; }
+  100% { opacity: 0.3; }
+}
+
+/* 🔥 Button Hover Effect */
+.primary-btn:hover {
+  background: #1f6feb;
+  transform: translateY(-2px);
+  transition: 0.2s;
+}
+
+/* 🔥 Input Focus Glow */
+textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 6px var(--accent);
+}
+
+/* 🔥 Chat Animation */
+.msg {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 🔥 Sidebar Glass Effect (Optional Premium Look) */
+.sidebar {
+  backdrop-filter: blur(10px);
+}
