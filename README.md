@@ -4,22 +4,22 @@ An advanced AI-powered Code Assistant that helps developers write, debug, analyz
 
 ---
 
-## 📌 Overview
+##  Overview
 
 This project is a full-stack AI assistant that acts like a mini ChatGPT for developers.
 
 It can:
-- 💻 Generate code from prompts
-- 🐛 Debug and fix errors
-- 📝 Explain code in simple language
-- 📂 Analyze uploaded files (PDF, DOCX, code)
-- 🧠 Use RAG (Retrieval-Augmented Generation)
-- 🛡️ Run Python code safely in a sandbox
-- 💾 Maintain chat history
+-  Generate code from prompts
+-  Debug and fix errors
+-  Explain code in simple language
+-  Analyze uploaded files (PDF, DOCX, code)
+-  Use RAG (Retrieval-Augmented Generation)
+-  Run Python code safely in a sandbox
+-  Maintain chat history
 
 ---
 
-## ✨ Features
+##  Features
 
 - **AI Chat Assistant**: Powered by LangChain and OpenAI API.
 - **Code Analysis Engine**: Breaks down complex source code files.
@@ -30,7 +30,7 @@ It can:
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 **Frontend:**
 - React.js, HTML5, CSS3, JavaScript (ES6+)
@@ -46,7 +46,7 @@ It can:
 
 ---
 
-## 📁 Project Structure
+##  Project Structure
 
 ```text
 AI-Assistant-Pro/
@@ -70,7 +70,7 @@ AI-Assistant-Pro/
 
 ---
 
-## 🔐 Environment Variables
+##  Environment Variables
 
 Create a `.env` file inside the `backend/` directory:
 
@@ -80,22 +80,22 @@ OPENAI_API_KEY=your_api_key_here
 
 ---
 
-## 🚀 How to Run Project
+##  How to Run Project
 
-### 1️⃣ Clone the Repository
+### 1️ Clone the Repository
 ```bash
-git clone https://github.com
+git clone https://github.com/divy686/ai-code-assistant.git
 cd ai-code-assistant
 ```
 
-### 2️⃣ Backend Setup
+### 2️ Backend Setup
 ```bash
 cd backend
 pip install -r requirements.txt
 python app.py
 ```
 
-### 3️⃣ Frontend Setup
+### 3️ Frontend Setup
 ```bash
 cd frontend
 npm install
@@ -104,7 +104,7 @@ npm start
 
 ---
 
-## 📸 Screenshots
+##  Screenshots
 
 ### Chat Interface
 ![Chat Interface](chat_interface.png)
