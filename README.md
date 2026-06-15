@@ -105,7 +105,7 @@ npm start
 ##  Screenshots
 
 ### Chat Interface
-![Chat Interface](./chat interface.png)
+![Chat Interface](chat interface.png)
 
 ### Feature Demo
 ![Feature Demo](./analysis.png)
