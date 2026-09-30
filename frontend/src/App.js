@@ -3,6 +3,7 @@ import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 import './App.css';
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://127.0.0.1:8080';
 function App() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -50,7 +51,7 @@ useEffect(() => {
   try {
     setLoading(true);
 
-    const res = await axios.post('http://127.0.0.1:8080/chat', {
+    const res = await axios.post(`${API_URL}/chat`, {
       message: input,
       history: updatedMessages, // 🔥 same use karo
       mode: mode
@@ -85,7 +86,7 @@ useEffect(() => {
 
     try {
       setLoading(true); 
-      const res = await axios.post('http://127.0.0.1:8080/run-python', {
+      const res = await axios.post(`${API_URL}/run-python`, {
         code: codeToRun,
         auto_fix: true
       });
@@ -128,7 +129,7 @@ useEffect(() => {
 
     try {
       setLoading(true);
-      const res = await axios.post('http://127.0.0.1:8080/analyze', formData, {
+      const res = await axios.post(`${API_URL}/analyze`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
