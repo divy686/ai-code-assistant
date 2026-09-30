@@ -168,3 +168,45 @@ textarea:focus {
 .sidebar {
   backdrop-filter: blur(10px);
 }
+
+.chat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  margin-bottom: 8px;
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.chat-item:hover {
+  background: #21262d;
+}
+
+.chat-item button {
+  background: transparent;
+  border: none;
+  color: #ff7b72;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+
+
+.analysis-window {
+  height: 85vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+pre,
+code {
+  white-space: pre-wrap !important;
+  word-break: break-word !important;
+  overflow-wrap: anywhere !important;
+  max-width: 100% !important;
+}
+

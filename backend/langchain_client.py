@@ -6,15 +6,15 @@ from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 load_dotenv()
 
 class LangChainClient:
-    def __init__(self, mode="General"):     
+    def __init__(self, mode="General"):
         self.role_prompts = {
             "Code Analysis": "Expert code analyst. Clear explanations.",
             "Code Generator": "Senior developer. Production-ready code.",
-            "Debugger": "Expert debugger. Find issues, suggest fixes.",  
+            "Debugger": "Expert debugger. Find issues, suggest fixes.",
             "Code Guide": "Step-by-step coding mentor.",
             "Optimization": "Performance and efficiency expert.",
             "Explain Code": "Beginner-friendly code explanations.",
-            "Project Builder": "Full-stack project architect.",
+            "Project Builder": "Full-stack project architect.",  
             "Documentation": "Professional software documentation writer.",
             "General": "Helpful AI coding assistant."
         }
@@ -30,10 +30,22 @@ class LangChainClient:
         self.system_prompt = self.role_prompts.get(mode, self.role_prompts["General"])
 
     def chat(self, messages):
+        
         prompt_messages = [SystemMessage(content=self.system_prompt)]
+        
+        
         for m in messages:
-            role = m.get("role")
-            content = m.get("content")
-            if role == "user": prompt_messages.append(HumanMessage(content=content))
-            else: prompt_messages.append(AIMessage(content=content))
+            
+            if hasattr(m, 'content'):
+                prompt_messages.append(m)
+            else:
+                
+                role = m.get("role")
+                content = m.get("content")
+                if role == "user":
+                    prompt_messages.append(HumanMessage(content=content))
+                else:
+                    prompt_messages.append(AIMessage(content=content))
+                    
+        
         return self.model.invoke(prompt_messages).content

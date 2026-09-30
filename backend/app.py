@@ -3,151 +3,183 @@ from flask_cors import CORS
 from langchain_client import LangChainClient
 from sandbox import run_code_snippet
 from rag_engine import RAGEngine
-
-import os, tempfile
+from db import init_db, save_message, get_messages, clear_messages, get_all_chats, create_chat, update_chat_title
+import os, tempfile, time
 from pypdf import PdfReader
 from docx2txt import process as docx_process
 from dotenv import load_dotenv
 
-load_dotenv()
-
+load_dotenv()  
 app = Flask(__name__)
 CORS(app)
 
+init_db()
 ai_assistant = LangChainClient()
-rag = RAGEngine()
+rag_engine = RAGEngine() 
 
-# --- Helper Function to Read Any File ---
+# --- Helper: File Extraction ---
 def extract_text(file):
     suffix = os.path.splitext(file.filename)[-1].lower()
-
-    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-        file.save(tmp.name)
-        tmp_path = tmp.name
-
     try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+            file.save(tmp.name)
+            tmp_path = tmp.name
+        
+        text = ""
         if suffix == ".pdf":
             reader = PdfReader(tmp_path)
-            return "\n".join([
-                page.extract_text() for page in reader.pages if page.extract_text()
-            ]) or ""
-
+            text = "\n".join([p.extract_text() for p in reader.pages if p.extract_text()])
         elif suffix == ".docx":
-            return docx_process(tmp_path) or ""
-
-        else:
+            text = docx_process(tmp_path)
+        elif suffix in [".py", ".js", ".ts", ".java", ".cpp", ".c", ".html", ".css", ".json", ".go", ".rb", ".php", ".cs", ".txt", ".md"]:
             with open(tmp_path, "r", encoding="utf-8", errors="ignore") as f:
-                return f.read() or ""
-
-    finally:
+                text = f.read()
+        
         if os.path.exists(tmp_path):
-            os.unlink(tmp_path)
-
-
-# 💬 CHAT ROUTE
-@app.route('/chat', methods=['POST'])
-def chat():
-    try:
-        data = request.json
-        ai_assistant.set_mode(data.get("mode", "General"))
-
-        # ✅ FIX: no duplicate message
-        response = ai_assistant.chat(data.get("history", []))
-
-        return jsonify({"status": "success", "reply": response})
-
+            os.remove(tmp_path)
+        return text or ""
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        print(f"Error reading {file.filename}: {e}")
+        return ""
 
+# --- ROUTES ---
 
-# 🚀 RUN PYTHON CODE
-@app.route('/run-python', methods=['POST'])
-def run_python():
+@app.route('/create-chat', methods=['POST'])
+def create_chat_route():
     try:
-        data = request.json
-        stdout, stderr = run_code_snippet(data.get("code"))
-
-        if stderr:
-            ai_assistant.set_mode("Debugger")
-
-            prompt = f"""
-Fix this Python error:
-{stderr}
-
-Code:
-{data.get('code')}
-
-Return ONLY fixed code.
-"""
-
-            fixed = ai_assistant.chat([{"role": "user", "content": prompt}])
-
-            return jsonify({
-                "status": "auto-fixed",
-                "error": stderr,
-                "fixed_code": fixed,
-                "output": stdout
-            })
-
-        return jsonify({"status": "success", "output": stdout})
-
+        data = request.json or {}
+        chat_id = data.get("chat_id")
+        if not chat_id:
+            return jsonify({"error": "chat_id required"}), 400
+        create_chat(chat_id, title="New Discussion 💬")
+        return jsonify({"status": "created"})
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return jsonify({"error": str(e)}), 500
 
-
-# 📊 ANALYZE FILES
 @app.route('/analyze', methods=['POST'])
 def analyze():
     try:
         files = request.files.getlist('files')
-
+        chat_id = request.form.get("chat_id")
+        
         if not files:
-            return jsonify({"reply": "❌ No files uploaded."})
+            return jsonify({"reply": "❌ No files uploaded."}), 400
 
-        global rag
-        rag = RAGEngine()
+        # 🔥 Fix 1: Clear previous context before new analysis
+        rag_engine.clear_db()
+        time.sleep(1) # Safety for Windows file lock
 
         for file in files:
-            text = extract_text(file) or ""
+            text = extract_text(file)
             if text.strip():
-             rag.add_documents(text, file.filename)
+                rag_engine.add_documents(text, file.filename)
 
-        context = rag.search("Analyze all uploaded files separately. Mention every file name and its issues clearly.")
-
+        context = rag_engine.search("Review all uploaded code files.")
+        
         if not context.strip():
-            return jsonify({"reply": "❌ Could not extract useful content."})
+            return jsonify({"reply": "❌ Content extraction failed."}), 400
 
-        ai_assistant.set_mode(request.form.get('mode', 'General'))
+        ai_assistant.set_mode("Code Analysis")
 
         prompt = f"""
-You are a strict senior code reviewer.
+You are a Senior Software Engineer and Code Reviewer. 
+Analyze ALL uploaded files separately and follow STRICT formatting for EACH file:
 
-Analyze ALL uploaded files using the context.
+--------------------------------------------------
+📄 File: [filename]
+--------------------------------------------------
+🔹 **Summary**: 
+(Explain what this file does in 2-3 lines)
 
-IMPORTANT:
-- You MUST mention every file present in the context
-- Do NOT skip any file
-- Do NOT assume anything
-- Only use given context
+🔹 **Issues / Improvements**: 
+- (List clear bullet points for bugs or bad practices)
 
-Context:
+🔹 **Suggested Fix**: 
+- (Provide improved code snippet ONLY if necessary)
+
+🔹 **Code Quality Score**: [X/10]
+--------------------------------------------------
+
+RULES:
+- DO NOT merge multiple files.
+- ALWAYS use bullet points (no long paragraphs).
+- Mention if this file depends on or calls another uploaded file.
+- Keep the response professional and concise.
+- If the uploaded file is not source code, provide a professional document summary, key points, and suggestions.
+Context: 
 {context}
-
-Output format:
-
-1. Summary
-2. File-wise Errors (for EACH file)
-3. File-wise Improvements (for EACH file)
-4. Code Quality Score (out of 10)
 """
 
+        
+           
+        
         response = ai_assistant.chat([{"role": "user", "content": prompt}])
+
+        # 🔥 Fix 2: Dynamic Sidebar Title
+        if chat_id and len(files) > 0:
+            try:
+                update_chat_title(chat_id, f"📄 Analysis: {files[0].filename}")
+            except: pass
 
         return jsonify({"reply": response})
 
     except Exception as e:
-        return jsonify({"reply": f"❌ Error: {str(e)}"})
+        return jsonify({"reply": f"❌ Analysis Error: {str(e)}"}), 500
 
-# ▶️ RUN APP
+@app.route('/chat', methods=['POST'])
+def chat():
+    try:
+        data = request.json or {}
+        chat_id = data.get("chat_id")
+        user_input = data.get("message")
+        history = data.get("history", [])
+
+        if not chat_id:
+            return jsonify({"status": "error", "message": "Missing chat_id"}), 400
+
+        # Title update for first message
+        existing_msgs = get_messages(chat_id)
+        if len(existing_msgs) == 0 and user_input:
+            update_chat_title(chat_id, user_input)
+
+        ai_assistant.set_mode(data.get("mode", "General"))
+        
+        if user_input:
+            save_message(chat_id, "user", user_input)
+
+        response = ai_assistant.chat(history)
+        save_message(chat_id, "assistant", response)
+        
+        return jsonify({"status": "success", "reply": response})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/chats', methods=['GET'])
+def chats_list():
+    return jsonify({"chats": get_all_chats()})
+
+@app.route('/history/<chat_id>', methods=['GET'])
+def history(chat_id):
+    return jsonify({"messages": get_messages(chat_id)})
+
+@app.route('/clear-history/<chat_id>', methods=['POST'])
+def clear_single_chat(chat_id):
+    clear_messages(chat_id)
+    return jsonify({"status": "cleared"})
+
+@app.route('/run-python', methods=['POST'])
+def run_python():
+    try:
+        data = request.json
+        code = data.get("code", "")
+        stdout, stderr = run_code_snippet(code)
+        if stderr:
+            ai_assistant.set_mode("Debugger")
+            fixed = ai_assistant.chat([{"role": "user", "content": f"Fix: {stderr}\nCode: {code}"}])
+            return jsonify({"status": "auto-fixed", "error": stderr, "fixed_code": fixed, "output": stdout})
+        return jsonify({"status": "success", "output": stdout})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 if __name__ == '__main__':
     app.run(debug=True, port=8080)

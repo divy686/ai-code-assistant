@@ -3,7 +3,6 @@ import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 import './App.css';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://127.0.0.1:8080';
 function App() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -13,80 +12,90 @@ function App() {
   const [analysisResult, setAnalysisResult] = useState('Results will appear here...');
   const [loading, setLoading] = useState(false);
   const chatEndRef = useRef(null); 
-  const isFirstLoad = useRef(true);               
+  const isFirstLoad = useRef(true);       
+  const [chatId, setChatId] = useState(Date.now().toString());
+  const [chatList, setChatList] = useState([]);        
 
-  useEffect(() => {   
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });              
-  }, [messages]);
+  
+  useEffect(() => {
+    loadChats();
+  }, []);
 
-  // 🔥 Chat History Load
-useEffect(() => {
-  const savedMessages = localStorage.getItem("chatHistory");
-  if (savedMessages) {
-    setMessages(JSON.parse(savedMessages));
-  }
-}, []);
+  const loadChats = async () => {
+    try {
+      const res = await axios.get("http://127.0.0.1:8080/chats");
+      setChatList(res.data.chats || []);
+    } catch {
+      console.log("Error loading chats");
+    }
+  };
 
-// 🔥 Chat History Save
-useEffect(() => {
-  if (isFirstLoad.current) {
-    isFirstLoad.current = false;
-    return;
-  }
 
-  localStorage.setItem("chatHistory", JSON.stringify(messages));
-}, [messages]);
+  useEffect(() => {
+    loadHistory(chatId);
+  }, [chatId]);
 
-  // 💬 Chat Function
+  const loadHistory = async (id) => {
+    try {
+      const res = await axios.get(`http://127.0.0.1:8080/history/${id}`);
+      setMessages(res.data.messages || []);
+    } catch {
+      console.log("Error loading history");
+    }
+  };
+
+  
   const sendMessage = async () => {
-  if (!input.trim()) return;
+    if (!input.trim()) return;
 
-  const userMsg = { role: 'user', content: input };
+    const userMsg = { role: 'user', content: input };
+    const updatedMessages = [...messages, userMsg];
 
-  const updatedMessages = [...messages, userMsg]; // 🔥 fix
+    setMessages(updatedMessages);
+    setInput('');
 
-  setMessages(updatedMessages);
-  setInput('');
+    try {
+      setLoading(true);
 
-  try {
-    setLoading(true);
+      const res = await axios.post('http://127.0.0.1:8080/chat', {
+        message: input,
+        history: updatedMessages,
+        mode: mode,
+        chat_id: chatId
+      });
 
-    const res = await axios.post(`${API_URL}/chat`, {
-      message: input,
-      history: updatedMessages, // 🔥 same use karo
-      mode: mode
-    });
+      setMessages(prev => [
+        ...prev,
+        { role: 'assistant', content: res.data.reply }
+      ]);
 
-    setMessages(prev => [...prev, { role: 'assistant', content: res.data.reply }]);
+      loadChats(); 
 
-  } catch (err) {
-    console.error(err);
-    alert("❌ Backend error!");
-  } finally {
-    setLoading(false);
-  }
-};
+    } catch (err) {
+      console.error(err);
+      alert("❌ Backend error!");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // 🚀 Run & Auto-Fix
+  // 🚀 RUN CODE
   const runCode = async () => {
     const lastAIResponse = messages.filter(m => m.role === 'assistant').pop();
     if (!lastAIResponse) return alert("Pehle AI se code generate karwao!");
 
     const codeMatch = lastAIResponse.content.match(/```(?:python)?([\s\S]*?)```/);
-
-    // ✅ SAFE CHECK
-    if (!codeMatch) {
-      return alert("⚠️ No runnable code found!");
-    }
+    if (!codeMatch) return alert("⚠️ No runnable code found!");
 
     const codeToRun = codeMatch[1].trim();
 
-    setAnalysisResult("⏳ Executing code and checking for errors...");
+    setAnalysisResult("⏳ Executing...");
     setActiveTab('analysisTab');
 
     try {
-      setLoading(true); 
-      const res = await axios.post(`${API_URL}/run-python`, {
+      setLoading(true);
+
+      const res = await axios.post('http://127.0.0.1:8080/run-python', {
         code: codeToRun,
         auto_fix: true
       });
@@ -111,41 +120,123 @@ useEffect(() => {
     }
   };
 
-  // 📂 File Upload
+  
   const handleFileChange = (e) => {
     setFiles(Array.from(e.target.files));
   };
 
-  // 📊 Analyze
-  const analyzeFiles = async () => {
-    if (files.length === 0) return;
+  
 
-    setAnalysisResult("Analyzing project files...");
-    setActiveTab('analysisTab');
+
+const analyzeFiles = async () => {
+  if (files.length === 0) return;
+
+  setAnalysisResult("Analyzing project files...");
+  setActiveTab('analysisTab');
+
+  try {
+    setLoading(true);
 
     const formData = new FormData();
     files.forEach(f => formData.append('files', f));
     formData.append('mode', mode);
+    formData.append('chat_id', chatId);
 
-    try {
-      setLoading(true);
-      const res = await axios.post(`${API_URL}/analyze`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+    const res = await axios.post('http://127.0.0.1:8080/analyze', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
 
+    setAnalysisResult("");
+    setTimeout(() => {
       setAnalysisResult(res.data.reply);
-    } catch (err) {
-      console.error(err);
-      setAnalysisResult("❌ Backend not running or error occurred");
-      } finally {
+    }, 100);
+
+    setFiles([]);
+    document.getElementById("fileInput").value = "";
+    loadChats();
+
+  } catch (err) {
+    console.error(err);
+    setAnalysisResult("❌ Backend not running or error occurred");
+  } finally {
     setLoading(false);
-    }
-  };
+  }
+};
+
+  const loadChatMessages = async (id) => {
+  try {
+    setChatId(id);
+    const res = await axios.get(`http://127.0.0.1:8080/history/${id}`);
+    setMessages(res.data.messages || []);
+  } catch (err) {
+    console.log("Error loading chat messages");
+  }
+};
+
+  
+const clearChat = async () => {
+  try {
+    await axios.post(`http://127.0.0.1:8080/clear-history/${chatId}`);
+    setMessages([]);
+    setAnalysisResult('Results will appear here...');
+  } catch (err) {
+    console.log("Error clearing chat");
+  }
+};
 
   return (
     <div className="container">
       <aside className="sidebar">
         <div className="logo">🤖 AI Code Assistant</div>
+        
+  
+<button onClick={async () => {
+    const newId = Date.now().toString();
+    try {
+        await axios.post("http://127.0.0.1:8080/create-chat", { chat_id: newId });
+        setChatId(newId);
+        setMessages([]);
+        loadChats(); 
+    } catch (err) {
+        alert("Could not create new chat. Is server running?");
+    }
+}}>
+    ➕ New Chat
+</button>
+
+
+        <div className="section">
+  <label>💬 Chats</label>
+
+  {chatList.map((chat, i) => (
+  <div
+    key={i}
+    className="chat-item"
+    onClick={() => {
+      console.log("CLICK WORKING", chat.id); // 🔍 debug
+      loadChatMessages(chat.id);
+    }}
+  >
+    🧠 {chat.title}
+
+    <button
+      onClick={(e) => {
+        e.stopPropagation(); // 🔥 VERY IMPORTANT
+
+        axios.post(`http://127.0.0.1:8080/clear-history/${chat.id}`);
+
+        setChatList(prev => prev.filter(c => c.id !== chat.id));
+
+        if (chat.id === chatId) {
+          setMessages([]);
+        }
+      }}
+    >
+      ❌
+    </button>
+  </div>
+))}
+</div>
 
         <div className="section">
           <label>⚙️ Mode Selection</label>
@@ -169,7 +260,9 @@ useEffect(() => {
             multiple
             hidden
             id="fileInput"
-            onChange={handleFileChange}
+            onChange={(e) => {
+  setFiles(Array.from(e.target.files));
+}}
             accept=".py,.js,.ts,.java,.cpp,.c,.html,.css,.json,.go,.rb,.php,.cs,.txt,.md,.docx,.pdf"
           />
           <label htmlFor="fileInput" className="upload-btn"> Browse Files </label>
@@ -178,7 +271,7 @@ useEffect(() => {
             {files.map((f, i) => (
               <div key={i} className="file-item">📄 {f.name}</div>
             ))}
-          </div>
+</div>
 
           {files.length > 0 && (
     <button 
@@ -202,11 +295,7 @@ useEffect(() => {
         </button>
 
         <button
-          onClick={() => {
-            setMessages([]);
-            setAnalysisResult('Results will appear here...');
-            localStorage.removeItem("chatHistory");
-          }}
+          onClick={clearChat}
           id="clearBtn"
         >
           🗑️ Clear Chat
@@ -228,7 +317,7 @@ useEffect(() => {
           >
             📊 Analysis & Terminal
           </button>
-        </div>
+         </div>
 
         <div className="tab-content active">
           {activeTab === 'chatTab' ? (
@@ -262,7 +351,42 @@ useEffect(() => {
           ) : (
             <div className="analysis-window scroll">
               {loading && <div className="loading">⏳ Processing...</div>}
-              <ReactMarkdown>{analysisResult}</ReactMarkdown>
+              <ReactMarkdown
+  components={{
+    pre({ children }) {
+      return (
+        <pre style={{
+          whiteSpace: "pre-wrap",
+          wordBreak: "break-word",
+          overflowWrap: "anywhere",
+          overflowX: "100%",
+          maxWidth: "100%",
+          background: "#1e1e1e",
+          padding: "12px",
+          borderRadius: "8px",
+          fontSize: "14px",
+          lineHeight: "1.6",
+          overflow: "visible",
+        }}>
+          {children}
+        </pre>
+      );
+    },
+    code({ children }) {
+      return (
+        <code style={{
+          whiteSpace: "pre-wrap",
+          wordBreak: "break-word",
+          overWrap: "break-word",
+        }}>
+          {children}
+        </code>
+      );
+    }
+  }}
+>
+  {analysisResult}
+</ReactMarkdown>
             </div>
           )}
         </div>
@@ -272,3 +396,15 @@ useEffect(() => {
 }
 
 export default App;    
+
+
+
+
+
+
+
+
+
+
+
+
