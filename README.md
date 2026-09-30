@@ -5,7 +5,7 @@ An AI-powered full-stack Code Assistant that helps developers write, debug, anal
 ##  Live Demo
 
 
-https://ai-code-assistant-frontend-rosy.vercel.app/
+[🚀 Live Demo](https://ai-code-assistant-frontend-rosy.vercel.app/)
 
 
 ---
