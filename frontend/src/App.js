@@ -13,8 +13,7 @@ function App() {
   const [files, setFiles] = useState([]); 
   const [analysisResult, setAnalysisResult] = useState('Results will appear here...'); 
   const [loading, setLoading] = useState(false); 
-  const chatEndRef = useRef(null);  
-  const isFirstLoad = useRef(true);        
+  const chatEndRef = useRef(null);     
   const [chatId, setChatId] = useState(Date.now().toString()); 
   const [chatList, setChatList] = useState([]);         
  
@@ -123,10 +122,7 @@ function App() {
   }; 
  
    
-  const handleFileChange = (e) => { 
-    setFiles(Array.from(e.target.files)); 
-  }; 
- 
+  
    
  
  
